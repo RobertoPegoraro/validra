@@ -7,30 +7,39 @@ import re
 class FuzzPlugin(BasePlugin):
     name = "fuzz"
 
-    def _extract_json(self, text: str):
+    def _extract_json(self, response):
         """
-        Extract the first valid JSON array from LLM output.
-        Cleans common prefixes like 'FINAL TEXT:' and ignores extra text.
+        Accepts either a raw string or already-parsed JSON (list).
         """
-        try:
-            # Remove common prefixes
-            text = re.sub(r"(?i)final text:\s*", "", text)
 
-            # Locate JSON array boundaries
-            start = text.find("[")
-            end = text.rfind("]")
+        try:
+            # Se já vier como lista, retorna direto
+            if isinstance(response, list):
+                return response
+
+            if not isinstance(response, str):
+                raise ValueError(f"Unexpected response type: {type(response)}")
+
+            # Remove prefixos comuns
+            response = re.sub(r"(?i)final text:\s*", "", response)
+
+            # Extrai bloco JSON
+            start = response.find("[")
+            end = response.rfind("]")
 
             if start == -1 or end == -1:
-                raise ValueError("No JSON array found in response")
+                raise ValueError("No JSON array found")
 
-            json_str = text[start:end + 1]
+            json_str = response[start:end + 1]
+
+            json_str = re.sub(r'\bundefined\b', 'null', json_str)
 
             return json.loads(json_str)
 
         except Exception as e:
             raise ValueError(f"Failed to parse JSON: {e}")
 
-    def generate(self, example, previous_cases=None, max_cases=10):
+    def generate(self, example, previous_cases=None, max_cases=35):
         """
         Generate negative/fuzz test cases with simple and robust parsing.
         """
@@ -39,9 +48,13 @@ class FuzzPlugin(BasePlugin):
             previous_cases = []
 
         all_cases = previous_cases.copy()
-        batch_size = min(5, max_cases)
 
-        prompt = f"""
+        while len(all_cases) < max_cases:
+
+            remaining = max_cases - len(all_cases)
+            batch_size = min(5, remaining)
+
+            prompt = f"""
 You are a senior QA engineer specialized in API testing.
 
 TASK:
@@ -60,13 +73,15 @@ STRICT OUTPUT RULES:
     - constructors (e.g., new String) 
     - comments 
     - pseudo-code 
+    - undefined, NaN, Infinity or any other JSON non-valid
 - All values must be literal JSON types: 
     - string 
     - number 
-    - boolean 
+    - boolean (true/false)
     - null 
     - object 
     - array Never use expressions like: new String(), repeat(), fill(), or any computed values.
+    - Do not use any non-JSON literals or language-specific values.
 
 VALID EXAMPLE:
 [
@@ -88,25 +103,35 @@ INPUT PAYLOAD:
 {json.dumps(example, indent=2)}
 """
 
-        try:
-            raw = call_llm(prompt)
+            try:
+                raw = call_llm(prompt)
 
-            new_cases = self._extract_json(raw)
+                new_cases = self._extract_json(raw)
 
-            if isinstance(new_cases, list):
-                for case in new_cases:
-                    if not isinstance(case, dict):
-                        continue
+                if isinstance(new_cases, list):
+                    added_any = False
 
-                    if "description" not in case or "payload" not in case:
-                        continue
+                    for case in new_cases:
+                        if not isinstance(case, dict):
+                            continue
 
-                    if case not in all_cases:
-                        all_cases.append(case)
-            else:
-                print("Unexpected format from LLM:", new_cases)
+                        if "description" not in case or "payload" not in case:
+                            continue
 
-        except Exception as e:
-            print("Error generating cases:", e)
+                        if case not in all_cases:
+                            all_cases.append(case)
+                            added_any = True
+
+                    # evita loop infinito caso não venha nada novo
+                    if not added_any:
+                        break
+
+                else:
+                    print("Unexpected format from LLM:", new_cases)
+                    break
+
+            except Exception as e:
+                print("Error generating cases:", e)
+                break
 
         return all_cases
