@@ -1,10 +1,11 @@
 package ia.validra.test;
 
-import java.util.Map;
+import ai.validra.Validra;
 
 import org.testng.annotations.Test;
 
-import ai.validra.Validra;
+import java.util.Map;
+
 public class ValidraTest {
 
     @Test
@@ -13,7 +14,7 @@ public class ValidraTest {
         Validra.test()
                 .endpoint("https://jsonplaceholder.typicode.com/posts")
                 .method("POST")
-                .examplePayload(Map.of(
+                .payload(Map.of(
                         "title", "foo",
                         "body", "bar",
                         "userId", 1

@@ -6,7 +6,7 @@ public class TestRequest {
 
     private String endpoint;
     private String method;
-    private Map<String, Object> examplePayload;
+    private Map<String, Object> payload;
     private String type = "fuzz";
 
     // getters & setters
@@ -16,9 +16,9 @@ public class TestRequest {
     public String getMethod() { return method; }
     public void setMethod(String method) { this.method = method; }
 
-    public Map<String, Object> getExamplePayload() { return examplePayload; }
-    public void setExamplePayload(Map<String, Object> examplePayload) {
-        this.examplePayload = examplePayload;
+    public Map<String, Object> getPayload() { return payload; }
+    public void setPayload(Map<String, Object> payload) {
+        this.payload = payload;
     }
 
     public String getType() { return type; }

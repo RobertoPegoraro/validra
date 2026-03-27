@@ -23,8 +23,8 @@ public class Validra {
         return this;
     }
 
-    public Validra examplePayload(Map<String, Object> payload) {
-        request.setExamplePayload(payload);
+    public Validra payload(Map<String, Object> payload) {
+        request.setPayload(payload);
         return this;
     }
 
