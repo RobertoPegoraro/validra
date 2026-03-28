@@ -1,9 +1,10 @@
-from app.plugins.fuzz.plugin import FuzzPlugin
-from app.plugins.security.plugin import SecurityPlugin
+from app.plugins.fuzz.fuzz import FuzzPlugin
+from app.plugins.security.security import SecurityPlugin
+import time
 
 PLUGINS = {
-    "fuzz": FuzzPlugin(),
-    "security": SecurityPlugin()
+    "FUZZ": FuzzPlugin(),
+    "AUTH": SecurityPlugin()
 }
 
 class Orchestrator:
@@ -12,28 +13,43 @@ class Orchestrator:
         self.plugin = plugin
         self.executor = executor
 
-    def run(self, request):
+    def generate(self, payload, max_cases):
+        return self.plugin.generate(payload, max_cases=max_cases)
 
-        tests = self.plugin.generate(request["payload"])
+    def run(self, request, tests):
+        enriched_tests = []
+        success_count = 0
 
-        results = []
-
-        for test in tests:
-            description = test.get("description", "generated")
+        for idx, test in enumerate(tests, start=1):
             payload = test.get("payload", {})
+            test_headers = test.get("headers")
 
-            print(payload)
+            start = time.time()
+            response = self.executor.execute(request, payload, headers=test_headers)
+            duration = int((time.time() - start) * 1000)
 
-            response = self.executor.execute(request, payload)
+            success = 200 <= response.get("status_code", 500) < 300
 
-            result = {
-                "description": description,
-                "request": payload,
-                "response": response
+            if success:
+                success_count += 1
+
+            enriched_tests.append({
+                "id": f"tc-{idx:03}",
+                "description": test.get("description"),
+                "request": {
+                    "payload": payload,
+                    "headers": test_headers if test_headers is not None else request.get("headers", {})
+                },
+                "response": response,
+                "success": success,
+                "duration_ms": duration
+            })
+
+        return {
+            "tests": enriched_tests,
+            "summary": {
+                "total": len(enriched_tests),
+                "success": success_count,
+                "failed": len(enriched_tests) - success_count
             }
-
-            print("TEST RESULT:", result)  # 👈 debug
-
-            results.append(result)
-
-        return results
+        }
