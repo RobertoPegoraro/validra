@@ -1,4 +1,8 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from fastapi.openapi.docs import get_swagger_ui_html
+
 from app.plugins.fuzz.fuzz import FuzzPlugin
 from app.plugins.security.security import SecurityPlugin
 from app.plugins.pen.pen import PenTestPlugin
@@ -8,8 +12,12 @@ from app.model.TestRequest import TestRequest
 
 app = FastAPI(
     title="Validra",
-    swagger_ui_parameters={"defaultModelsExpandDepth": -1}
+    swagger_ui_parameters={"defaultModelsExpandDepth": -1},
+    docs_url=None,
+    redoc_url=None
 )
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 PLUGINS = {
     "FUZZ": FuzzPlugin(),
@@ -19,7 +27,23 @@ PLUGINS = {
 
 executor = Executor()
 
-@app.post("/generateAndRun", summary='Generates and Run API test')
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title="Validra",
+        swagger_favicon_url="/favicon.ico",
+        swagger_ui_parameters={
+            "defaultModelsExpandDepth": -1,
+            "defaultModelExpandDepth": -1 
+        }
+    )
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse("app/static/favicon.ico")
+
+@app.post("/generateAndRun", summary='Generates Test Cases and Run', tags=["Testing"])
 def generate_and_run(request: TestRequest):
 
     """
