@@ -1,16 +1,17 @@
-version: "3.8"
+version: "3.9"
 
 services:
-
-  validra:
-    build: ../validra-core
-    container_name: validra
+  api:
+    build: .
+    container_name: fastapi_app
     ports:
       - "8000:8000"
     depends_on:
       - ollama
     environment:
-      - OLLAMA_URL=http://ollama:11434/api/generate
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - .:/app
 
   ollama:
     image: ollama/ollama
@@ -19,9 +20,8 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
-    entrypoint: ["/bin/sh", "-c", "/init-ollama.sh"]
-    volumes:
-      - ./init-ollama.sh:/init-ollama.sh
+      - ./start.sh:/start.sh
+    entrypoint: ["/bin/sh", "/start.sh"]
 
 volumes:
   ollama_data:
