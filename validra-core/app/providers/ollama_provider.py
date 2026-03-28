@@ -3,7 +3,6 @@ import json
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 
-
 def call_llm(prompt: str) -> dict:
     try:
         response = requests.post(
@@ -14,7 +13,7 @@ def call_llm(prompt: str) -> dict:
                 "stream": False, 
                 "options": {
                     "temperature": 0.7,
-                    "num_predict": 600,
+                    "num_predict": 400,
                     "top_p": 0.9
                 }
             },
@@ -31,39 +30,30 @@ def call_llm(prompt: str) -> dict:
 
             try:
                 data = json.loads(line)
-
-                # concatena resposta incremental
                 if "response" in data:
                     final_text += data["response"]
-
-                # terminou geração
                 if data.get("done"):
                     break
-
             except json.JSONDecodeError:
                 continue
 
-        print("FINAL TEXT:", final_text)
+        print(final_text)
 
-        # tenta extrair JSON do meio do texto (mais robusto)
         return extract_json(final_text)
 
     except requests.exceptions.ReadTimeout:
         raise Exception("LLM timeout (model too slow or prompt too large)")
-
     except requests.exceptions.ConnectionError:
         raise Exception("Cannot connect to Ollama (is it running?)")
-
     except requests.exceptions.HTTPError as e:
         raise Exception(f"Ollama HTTP error: {e}")
-
     except Exception as e:
         raise Exception(f"Unexpected LLM error: {str(e)}")
 
 
 def extract_json(text: str) -> dict:
     """
-    Extrai JSON mesmo se vier com texto extra antes/depois
+    Extract JSON even if it has extra text before or after payload
     """
     try:
         return json.loads(text)
