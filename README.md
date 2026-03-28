@@ -1,78 +1,102 @@
-# 🧠 Validra
-AI-powered QA platform — generate, execute and validate APIs
+🧠 Validra
 
----
+AI-powered API testing — generate, execute, and validate automatically
 
-## 🚀 What is Validra?
+🚀 What is Validra?
 
-Validra is an AI-driven testing platform that:
+Validra is an AI-driven QA platform that turns a single valid request into a complete suite of automated API tests.
 
-* Generates fuzzy test cases from a valid payload
-* Executes API requests
-* Validates responses semantically
-* Detects bugs automatically
+It can:
 
----
+Generate intelligent test cases (not just random fuzzing)
+Execute requests against your API
+Validate responses automatically
+Detect bugs, edge cases, and security risks
 
-## ⚡ Quick Start (Java)
+🧠 Core Concept
 
-```java
-Validra.test()
-    .endpoint("/users")
-    .method("POST")
-    .examplePayload(Map.of(
-        "name", "John",
-        "email", "john@mail.com",
-        "age", 30
-    ))
-    .run();
-```
+Give Validra one valid request — it explores everything else.
 
----
+Instead of manually writing dozens of test cases, Validra uses AI to:
 
-## 🧠 Core Idea
+Break your assumptions
+Stress your API
+Simulate real-world misuse
+Reveal hidden issues
 
-> Give Validra one valid request — it tests everything else.
+🔌 Test Types (Plugins)
 
----
+Validra is built on a modular plugin system:
 
-## 🔌 Plugins
+🧪 FUZZ
+Invalid inputs
+Edge cases
+Type mismatches
+Boundary testing
 
-Validra is plugin-based:
+🔐 AUTH
+Missing/invalid tokens
+Authorization flaws
+Access control issues
 
-* `fuzz` → generates edge cases
-* `security` → detects vulnerabilities
-* more coming...
+💣 PEN
+Injection-style probes (safe)
+Privilege escalation attempts
+Payload manipulation
+Vulnerability discovery
 
----
+More plugins coming soon.
 
-## 🏗️ Architecture
+SDK	Java
+Future	CLI + Web UI
 
-* Python → AI engine
-* Java → SDK for QA teams
-* CLI → automation
-
----
-
-## 🛠️ Run Locally
-
-```bash
+🛠️ Run Locally
 cd validra-core
 pip install -r requirements.txt
 uvicorn app.main:app --reload
-```
 
----
+API will be available at:
 
-## 🗺️ Roadmap
+http://127.0.0.1:8000/docs
+📊 Example Output
+{
+  "tests": [
+    {
+      "id": "tc-001",
+      "description": "Missing Authorization header",
+      "success": false,
+      "duration_ms": 120
+    }
+  ],
+  "summary": {
+    "total": 10,
+    "success": 7,
+    "failed": 3,
+    "total_duration_ms": 980
+  }
+}
 
-* [ ] Real API execution engine
-* [ ] Replay failing cases
-* [ ] CI/CD integration
-* [ ] Web dashboard
+🗺️ Roadmap
+ Parallel test execution (⚡ speed)
+ Smart result analysis (AI insights)
+ Replay failing test cases
+ CI/CD integration (GitHub Actions, GitLab)
+ Web dashboard
+ Test coverage insights
+🤝 Contributing
 
----
+Contributions are welcome!
 
-## 🤝 Contributing
+If you want to:
 
-PRs welcome!
+add new plugins
+improve prompts
+enhance execution engine
+
+Feel free to open a PR 🚀
+
+💡 Vision
+
+Validra aims to become:
+
+“The AI QA engineer for your APIs.”
