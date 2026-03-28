@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from app.plugins.fuzz.fuzz import FuzzPlugin
 from app.plugins.security.security import SecurityPlugin
+from app.plugins.pen.pen import PenTestPlugin
 from app.engine.executor import Executor
 from app.engine.orchestrator import Orchestrator
 from app.model.TestRequest import TestRequest
@@ -12,7 +13,8 @@ app = FastAPI(
 
 PLUGINS = {
     "FUZZ": FuzzPlugin(),
-    "AUTH": SecurityPlugin()
+    "AUTH": SecurityPlugin(),
+    "PEN" : PenTestPlugin()
 }
 
 executor = Executor()

@@ -30,3 +30,8 @@ start.sh
 # Acompanhar logs
 docker-compose logs -f api
 docker-compose logs -f ollama
+
+
+
+# To validate
+USE LLM to identify responses if that is correct or not. For example null value in request returning 200, is that expected or it's a system error?

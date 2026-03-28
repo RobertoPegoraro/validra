@@ -30,9 +30,11 @@ STRICT OUTPUT RULES:
 - Focus on misconfigurations, invalid inputs, and edge cases
 
 IMPORTANT:
+- Do NOT repeat previous cases
 - DO NOT modify payload
 - ALWAYS reuse the original payload exactly as provided
 - ONLY modify headers
+- Keep cases diverse
 
 FORMAT:
 [
@@ -46,8 +48,8 @@ FORMAT:
 GUIDELINES:
 - Focus on Authorization header issues
 - Include missing, malformed, or incorrect tokens
-- Simulate expired or invalid tokens using dummy values
-- Include role/permission edge cases
+- Simulate expired or invalid tokens
+- Include edge cases
 
 Previous cases:
 {json.dumps(previous_cases, indent=2)}

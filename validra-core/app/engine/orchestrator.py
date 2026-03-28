@@ -1,10 +1,12 @@
 from app.plugins.fuzz.fuzz import FuzzPlugin
 from app.plugins.security.security import SecurityPlugin
+from app.plugins.pen.pen import PenTestPlugin
 import time
 
 PLUGINS = {
     "FUZZ": FuzzPlugin(),
-    "AUTH": SecurityPlugin()
+    "AUTH": SecurityPlugin(),
+    "PEN" : PenTestPlugin()
 }
 
 class Orchestrator:
@@ -19,6 +21,7 @@ class Orchestrator:
     def run(self, request, tests):
         enriched_tests = []
         success_count = 0
+        total_duration = 0
 
         for idx, test in enumerate(tests, start=1):
             payload = test.get("payload", {})
@@ -27,6 +30,7 @@ class Orchestrator:
             start = time.time()
             response = self.executor.execute(request, payload, headers=test_headers)
             duration = int((time.time() - start) * 1000)
+            total_duration += duration
 
             success = 200 <= response.get("status_code", 500) < 300
 
@@ -50,6 +54,7 @@ class Orchestrator:
             "summary": {
                 "total": len(enriched_tests),
                 "success": success_count,
-                "failed": len(enriched_tests) - success_count
+                "failed": len(enriched_tests) - success_count,
+                "total_duration_ms": total_duration
             }
         }
