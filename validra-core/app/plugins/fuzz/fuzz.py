@@ -10,57 +10,130 @@ class FuzzPlugin(LLMBasePlugin):
             isinstance(case, dict)
             and "description" in case
             and "payload" in case
+            and isinstance(case["payload"], dict)
         )
 
-    def _build_prompt(self, example, previous_cases, batch_size):
+    def _build_prompt(self, example, previous_cases, batch_size, meta):
         return f"""
 You are a senior QA engineer specialized in API testing.
 
 TASK:
-Generate up to {batch_size} diverse negative and edge test cases.
+Generate up to {batch_size} diverse NEGATIVE and edge test cases.
 
-STRICT OUTPUT RULES:
-- Return ONLY a valid JSON array
-- Do NOT include any extra text, prefixes, or explanations
-- Do NOT include "FINAL TEXT" or similar labels
+====================================================
+CRITICAL INSTRUCTIONS (MUST FOLLOW STRICTLY)
+====================================================
+
+- You MUST return ONLY valid JSON
+- Output MUST be a JSON array
+- Do NOT include any explanations, markdown, comments, or extra text
 - Output must start with [ and end with ]
-- Use only valid JSON types
-- Do not suggest any attacks, credentials, tokens, or anything that could be interpreted as a security test.
-- Do NOT include: 
-    - JavaScript expressions 
-    - functions 
-    - constructors (e.g., new String) 
-    - comments 
-    - pseudo-code 
-    - undefined, NaN, Infinity or any other JSON non-valid
-- All values must be literal JSON types: 
-    - string 
-    - number 
-    - boolean (true/false)
-    - null 
-    - object 
-    - array Never use expressions like: new String(), repeat(), fill(), or any computed values.
-    - Do not use any non-JSON literals or language-specific values.
+- The response will be parsed programmatically — invalid JSON will be rejected
 
-VALID EXAMPLE:
+====================================================
+STRICT OUTPUT CONSTRAINTS
+====================================================
+
+- Do NOT use:
+  - JavaScript expressions (e.g. "a".repeat(10))
+  - Any programming syntax or code
+  - Functions, methods, or constructors (e.g. new String, repeat, fill)
+  - Pseudo-code
+  - Computations or expressions of any kind
+- All values MUST be literal JSON values only:
+  - string
+  - number
+  - boolean (true/false)
+  - null
+  - object
+  - array
+
+====================================================
+STRING RULES (VERY IMPORTANT)
+====================================================
+
+- If a field requires a long string, you MUST write the full string explicitly
+- DO NOT generate strings using any expression or shorthand
+- DO NOT describe how to construct strings
+
+BAD:
+  "title": "a".repeat(51)
+
+GOOD:
+  "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+If a long string is needed, expand it manually with literal characters.
+
+====================================================
+META USAGE
+====================================================
+
+META describes constraints for each field in the payload.
+
+{json.dumps(meta, indent=2)}
+
+Use META to generate invalid and edge cases such as:
+- Required fields → missing, null, empty
+- Numeric ranges → below min, above max
+- String constraints → too short, too long
+- Type mismatches
+
+====================================================
+TEST CASE REQUIREMENTS
+====================================================
+
+Each test case MUST include:
+
+- "description": short explanation of the scenario
+- "payload": object with mutated input values
+
+====================================================
+OUTPUT FORMAT EXAMPLE
+
 [
-    {{
-        "description": "...",
-        "payload": {{}}
+  {{
+    "description": "Body missing",
+    "payload": {{
+      "body": null,
+      "title": "Validra Test",
+      "userId": 30
     }}
+  }},
+  {{
+    "description": "Title too short",
+    "payload": {{
+      "body": "Testing",
+      "title": "",
+      "userId": 30
+    }}
+  }}
 ]
 
-IMPORTANT:
-- Do NOT repeat previous cases
-- Focus on invalid, edge, and malformed inputs
-- Keep cases diverse
-- DO NOT generate or modify headers
-- ONLY generate payload variations
-- Ignore any headers in the input
+====================================================
+STRICT RULES
+====================================================
 
-Previous cases:
+- Do NOT repeat previous cases
+- Generate only negative and edge cases
+- Do NOT include headers
+- Do NOT include any fields outside payload
+- Do NOT include code or explanations
+- Do NOT include computed or generated expressions
+- Keep outputs diverse
+
+====================================================
+INPUT PAYLOAD
+====================================================
+
+{json.dumps(example, indent=2)}
+
+====================================================
+PREVIOUS CASES (DO NOT DUPLICATE)
+====================================================
+
 {json.dumps(previous_cases, indent=2)}
 
-INPUT PAYLOAD:
-{json.dumps(example, indent=2)}
+====================================================
+END OF INSTRUCTIONS
+====================================================
 """

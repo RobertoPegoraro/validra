@@ -13,7 +13,7 @@ def call_llm(prompt: str) -> dict:
                 "stream": False, 
                 "options": {
                     "temperature": 0.7,
-                    "num_predict": 400,
+                    "num_predict": 700,
                     "top_p": 0.9
                 }
             },

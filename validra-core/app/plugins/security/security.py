@@ -14,7 +14,7 @@ class SecurityPlugin(LLMBasePlugin):
             and case["payload"] != {}
         )
 
-    def _build_prompt(self, example, previous_cases, batch_size):
+    def _build_prompt(self, example, previous_cases, batch_size, meta=None):
         return f"""
 You are a senior QA engineer specialized in API security testing.
 

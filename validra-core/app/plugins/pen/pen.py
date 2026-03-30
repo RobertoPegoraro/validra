@@ -14,7 +14,7 @@ class PenTestPlugin(LLMBasePlugin):
             and len(case["payload"]) > 0
         )
 
-    def _build_prompt(self, example, previous_cases, batch_size):
+    def _build_prompt(self, example, previous_cases, batch_size, meta=None):
         return f"""
 You are a senior penetration tester specializing in API security.
 

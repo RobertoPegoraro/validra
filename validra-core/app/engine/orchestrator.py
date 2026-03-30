@@ -1,24 +1,33 @@
 from app.plugins.fuzz.fuzz import FuzzPlugin
 from app.plugins.security.security import SecurityPlugin
 from app.plugins.pen.pen import PenTestPlugin
+from app.plugins.validator.validator import LLMValidatorPlugin
 import time
 
 PLUGINS = {
     "FUZZ": FuzzPlugin(),
     "AUTH": SecurityPlugin(),
-    "PEN" : PenTestPlugin()
+    "PEN": PenTestPlugin()
 }
 
 class Orchestrator:
 
-    def __init__(self, plugin, executor):
+    def __init__(self, plugin, executor, validator=None):
         self.plugin = plugin
         self.executor = executor
+        self.validator = validator or LLMValidatorPlugin()
 
     def generate(self, payload, max_cases):
-        return self.plugin.generate(payload, max_cases=max_cases)
+        return self.plugin.generate(
+            example=payload,
+            previous_cases=[],
+            max_cases=max_cases,
+            meta=payload.get("meta", {})
+        )
 
     def run(self, request, tests):
+        validate_enabled = request.get("validate", True)
+
         enriched_tests = []
         success_count = 0
         total_duration = 0
@@ -37,6 +46,15 @@ class Orchestrator:
             if success:
                 success_count += 1
 
+            validation_result = None
+
+            if validate_enabled:
+                validation_result = self.validator.validate_with_llm(
+                    test=test,
+                    response=response,
+                    meta=request.get("meta", {})
+                )
+
             enriched_tests.append({
                 "id": f"tc-{idx:03}",
                 "description": test.get("description"),
@@ -46,7 +64,8 @@ class Orchestrator:
                 },
                 "response": response,
                 "success": success,
-                "duration_ms": duration
+                "duration_ms": duration,
+                "validation": validation_result
             })
 
         return {

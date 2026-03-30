@@ -9,6 +9,8 @@ from app.plugins.pen.pen import PenTestPlugin
 from app.engine.executor import Executor
 from app.engine.orchestrator import Orchestrator
 from app.model.TestRequest import TestRequest
+from app.plugins.validator.validator import LLMValidatorPlugin
+from app.model.ValidateRequest import ValidateRequest
 
 app = FastAPI(
     title="Validra",
@@ -26,6 +28,7 @@ PLUGINS = {
 }
 
 executor = Executor()
+validator = LLMValidatorPlugin()
 
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
@@ -43,7 +46,25 @@ async def custom_swagger_ui_html():
 async def favicon():
     return FileResponse("app/static/favicon.ico")
 
-@app.post("/generateAndRun", summary='Generates Test Cases and Run', tags=["Testing"])
+@app.post("/validate", summary='Validate Response from /generateAndRun', tags=["Validation"])
+def validate(request: ValidateRequest):
+    try:
+        result = validator.validate_with_llm(
+            test=request.test,
+            response=request.response,
+            meta=request.meta or {}
+        )
+        return {
+            "validation": result
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Validation error: {str(e)}"
+        )
+
+@app.post("/generateAndRun", summary='Generates Test Cases and Run', tags=["Execution"])
 def generate_and_run(request: TestRequest):
 
     """
@@ -100,7 +121,8 @@ def generate_and_run(request: TestRequest):
 
     safe_input = {
         "payload": request.payload,
-        "headers": request.headers
+        "headers": request.headers,
+        "meta": request.payload_meta or {}
     }
 
     try:
