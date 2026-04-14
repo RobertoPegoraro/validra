@@ -1,9 +1,0 @@
-endpoint: https://jsonplaceholder.typicode.com/posts
-method: POST
-
-examplePayload:
-  title: foo
-  body: bar
-  userId: 1
-
-type: fuzz
